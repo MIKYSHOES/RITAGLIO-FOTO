@@ -28,14 +28,27 @@ def process_images():
             with open(in_path, 'rb') as f:
                 img_data = f.read()
 
+            # Rimuove lo sfondo e crea il canale trasparente
             nobg_data = remove(img_data)
             img = Image.open(io.BytesIO(nobg_data))
 
+            # Trova i confini del soggetto e ritaglia
             bbox = img.getbbox()
             if bbox:
                 cropped_img = img.crop(bbox)
-                cropped_img.save(out_path, "PNG")
-                print(f"✅ Salvata: {out_path}")
+
+                # Crea uno sfondo bianco della stessa dimensione dell'immagine ritagliata
+                background = Image.new("RGB", cropped_img.size, (255, 255, 255))
+                
+                # Incolla il soggetto sullo sfondo bianco usando la trasparenza come maschera
+                if cropped_img.mode == 'RGBA':
+                    background.paste(cropped_img, mask=cropped_img.split()[3])
+                else:
+                    background.paste(cropped_img)
+
+                # Salva l'immagine finale
+                background.save(out_path, "PNG")
+                print(f"✅ Salvata con sfondo bianco: {out_path}")
         except Exception as e:
             print(f"❌ Errore su {filename}: {e}")
 
